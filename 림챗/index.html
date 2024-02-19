@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>림챗</title>
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<style>
+  
+  #limbot-title {
+    background-color: rgba(173, 216, 230, 0);
+    color: black;
+    font-family: '본고딕', sans-serif;
+    font-size: 35px;
+    padding: 5px;
+    text-align: center;
+  }
+
+  #chat-container {
+    height: calc(100% - 100px); 
+    overflow-y: scroll;
+  }
+  #user-input-container {
+    position: fixed;
+    bottom: 0; 
+    width: 100%;
+    padding: 10px;
+    background-color: rgba(173, 216, 230, 0); 
+    box-sizing: border-box;
+  }
+</style>
+</head>
+<body>
+<div id="limbot-title">Limbot</div>
+<div id="chat-container"></div>
+<div id="user-input-container">
+  <input type="text" id="user-input" placeholder="질문을 입력하세요..." onkeydown="handleKeyDown(event)">
+  <button onclick="sendMessage()">Send</button>
+</div>
+
+<script>
+  const chatContainer = document.getElementById('chat-container');
+  const userInput = document.getElementById('user-input');
+  let qaPairs = [];
+
+  function readQAFromFile() {
+    try {
+      const data = localStorage.getItem('qa_pairs');
+      if (data) {
+        return JSON.parse(data);
+      } else {
+        return [];
+      }
+    } catch (err) {
+      console.error('Error reading file:', err);
+      return [];
+    }
+  }
+
+  function saveQAToFile(qaPairs) {
+    try {
+      localStorage.setItem('qa_pairs', JSON.stringify(qaPairs));
+    } catch (err) {
+      console.error('Error saving file:', err);
+    }
+  }
+
+  qaPairs = readQAFromFile();
+
+  function handleKeyDown(event) {
+    if (event.key === 'Enter') {
+      sendMessage();
+    }
+  }
+
+  function sendMessage() {
+    const question = userInput.value.trim();
+    if (!question) return;
+
+    addMessage(`◻ ${question}`);
+    const answer = getAnswer(question);
+    if (answer) {
+      addMessage(`◼ ${answer}`);
+    } else {
+      
+      const newAnswer = prompt("학습되지 않은 질문입니다. 답변을 입력해 주세요:");
+      if (newAnswer.trim() !== "") {
+        qaPairs.push({ question: question, answer: newAnswer.trim() });
+        addMessage(`새로운 답변이 학습되었습니다: ◼ ${newAnswer.trim()}`);
+        saveQAToFile(qaPairs);
+      } else {
+        addMessage("학습되지 않은 내용입니다. 답변을 입력해 주세요");
+      }
+    }
+
+    userInput.value = '';
+  }
+
+  function addMessage(message) {
+    const div = document.createElement('div');
+    div.textContent = message;
+    chatContainer.appendChild(div);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+
+  function getAnswer(question) {
+    for (const pair of qaPairs) {
+      if (pair.question === question) {
+        return pair.answer;
+      }
+    }
+    return null;
+  }
+
+</script>
+</body>
+</html>
